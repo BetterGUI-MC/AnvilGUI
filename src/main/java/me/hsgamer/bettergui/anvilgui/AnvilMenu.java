@@ -119,7 +119,10 @@ public class AnvilMenu extends Menu<AnvilGUI> {
       builder.preventClose();
     }
 
-    builder.text(hasVariables(player, text) ? setVariables(text, player) : text);
+    if (text != null) {
+      builder.text(
+          CommonUtils.colorize(hasVariables(player, text) ? setVariables(text, player) : text));
+    }
 
     if (icon != null) {
       builder.item(
