@@ -5,17 +5,17 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>me.hsgamer.bettergui</groupId>
-  <artifactId>ExampleAddon</artifactId>
+  <artifactId>AnvilGUI</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>ExampleAddon</name>
-  <description>An Example addon for BetterGUI</description>
+  <name>AnvilGUI</name>
+  <description>Get inputs in a fancy way</description>
 
   <properties>
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.mainClass>me.hsgamer.bettergui.exampleaddon.ExampleAddon</project.mainClass>
+    <project.mainClass>me.hsgamer.bettergui.anvilgui.Main</project.mainClass>
   </properties>
 
   <build>
@@ -42,6 +42,13 @@
             </goals>
             <configuration>
               <createDependencyReducedPom>false</createDependencyReducedPom>
+              <minimizeJar>true</minimizeJar>
+              <relocations>
+                <relocation>
+                  <pattern>net.wesjd.anvilgui</pattern>
+                  <shadedPattern>me.hsgamer.bettergui.anvilgui.lib.anvilgui</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>
@@ -72,6 +79,10 @@
       <id>codemc-snapshots</id>
       <url>https://repo.codemc.io/repository/maven-snapshots/</url>
     </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -86,6 +97,11 @@
       <artifactId>BetterGUI</artifactId>
       <version>3.0</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.WesJD.AnvilGUI</groupId>
+      <artifactId>anvilgui</artifactId>
+      <version>master-61aa6d8080-1</version>
     </dependency>
   </dependencies>
 </project>
