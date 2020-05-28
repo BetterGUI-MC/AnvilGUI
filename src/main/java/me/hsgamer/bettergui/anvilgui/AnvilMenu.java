@@ -1,10 +1,11 @@
 package me.hsgamer.bettergui.anvilgui;
 
+import static me.hsgamer.bettergui.BetterGUI.getInstance;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import me.hsgamer.bettergui.BetterGUI;
 import me.hsgamer.bettergui.builder.IconBuilder;
 import me.hsgamer.bettergui.lib.xseries.XMaterial;
 import me.hsgamer.bettergui.object.ClickableItem;
@@ -14,6 +15,7 @@ import me.hsgamer.bettergui.object.LocalVariableManager;
 import me.hsgamer.bettergui.object.Menu;
 import me.hsgamer.bettergui.object.property.menu.MenuAction;
 import me.hsgamer.bettergui.object.property.menu.MenuTitle;
+import me.hsgamer.bettergui.util.CommonUtils;
 import net.wesjd.anvilgui.AnvilGUI;
 import net.wesjd.anvilgui.AnvilGUI.Builder;
 import org.bukkit.OfflinePlayer;
@@ -46,15 +48,26 @@ public class AnvilMenu extends Menu<AnvilGUI> {
             title = new MenuTitle(this);
             title.setValue(section.get(key1));
           } else if (key1.equalsIgnoreCase("text")) {
-            text = section.getString("text");
+            text = section.getString(key1);
           } else if (key1.equalsIgnoreCase("complete-action")) {
             completeAction = new MenuAction(this);
-            completeAction.setValue(section.get("complete-action"));
+            completeAction.setValue(section.get(key1));
           } else if (key1.equalsIgnoreCase("close-action")) {
             closeAction = new MenuAction(this);
-            closeAction.setValue(section.get("close-action"));
+            closeAction.setValue(section.get(key1));
           } else if (key1.equalsIgnoreCase("prevent-close")) {
-            preventClose = section.getBoolean("prevent-close");
+            preventClose = section.getBoolean(key1);
+          } else if (key1.equalsIgnoreCase("command")) {
+            CommonUtils.createStringListFromObject(key1, true)
+                .forEach(s -> {
+                  if (s.contains(" ")) {
+                    getInstance().getLogger().warning(
+                        "Illegal characters in command '" + s + "'" + "in the menu '" + getName()
+                            + "'. Ignored");
+                  } else {
+                    getInstance().getCommandManager().registerMenuCommand(s, this);
+                  }
+                });
           }
         });
       } else {
@@ -82,7 +95,7 @@ public class AnvilMenu extends Menu<AnvilGUI> {
 
   @Override
   public boolean createInventory(Player player, String[] strings, boolean b) {
-    AnvilGUI.Builder builder = new Builder().plugin(BetterGUI.getInstance());
+    AnvilGUI.Builder builder = new Builder().plugin(getInstance());
     builder.onClose(player1 -> {
       if (closeAction != null) {
         closeAction.getParsed(player1).execute();
