@@ -58,7 +58,7 @@ public class AnvilMenu extends Menu<AnvilGUI> {
           } else if (key1.equalsIgnoreCase("prevent-close")) {
             preventClose = section.getBoolean(key1);
           } else if (key1.equalsIgnoreCase("command")) {
-            CommonUtils.createStringListFromObject(key1, true)
+            CommonUtils.createStringListFromObject(section.get(key1), true)
                 .forEach(s -> {
                   if (s.contains(" ")) {
                     getInstance().getLogger().warning(
