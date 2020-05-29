@@ -101,7 +101,7 @@
     <dependency>
       <groupId>com.github.WesJD.AnvilGUI</groupId>
       <artifactId>anvilgui</artifactId>
-      <version>master-61aa6d8080-1</version>
+      <version>master-SNAPSHOT</version>
     </dependency>
   </dependencies>
 </project>
