@@ -16,6 +16,7 @@ import me.hsgamer.bettergui.object.Menu;
 import me.hsgamer.bettergui.object.property.menu.MenuAction;
 import me.hsgamer.bettergui.object.property.menu.MenuTitle;
 import me.hsgamer.bettergui.util.CommonUtils;
+import net.md_5.bungee.api.ChatColor;
 import net.wesjd.anvilgui.AnvilGUI;
 import net.wesjd.anvilgui.AnvilGUI.Builder;
 import org.bukkit.OfflinePlayer;
@@ -104,7 +105,7 @@ public class AnvilMenu extends Menu<AnvilGUI> {
     });
 
     builder.onComplete((player1, s) -> {
-      userInputs.put(player1.getUniqueId(), s);
+      userInputs.put(player1.getUniqueId(), ChatColor.stripColor(s));
       if (completeAction != null) {
         completeAction.getParsed(player1).execute();
       }
