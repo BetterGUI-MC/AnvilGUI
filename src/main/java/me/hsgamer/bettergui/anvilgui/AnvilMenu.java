@@ -34,6 +34,7 @@ public class AnvilMenu extends Menu<AnvilGUI> {
   private MenuAction closeAction;
   private Icon icon;
   private boolean preventClose;
+  private boolean clearInput = false;
 
   public AnvilMenu(String name) {
     super(name);
@@ -69,6 +70,8 @@ public class AnvilMenu extends Menu<AnvilGUI> {
                     getInstance().getCommandManager().registerMenuCommand(s, this);
                   }
                 });
+          } else if (key1.equalsIgnoreCase("clear-input-on-complete")) {
+            clearInput = section.getBoolean(key1);
           }
         });
       } else {
@@ -107,7 +110,13 @@ public class AnvilMenu extends Menu<AnvilGUI> {
     builder.onComplete((player1, s) -> {
       userInputs.put(player1.getUniqueId(), ChatColor.stripColor(s));
       if (completeAction != null) {
-        completeAction.getParsed(player1).execute();
+        completeAction.getParsed(player1).execute(() -> {
+          if (clearInput) {
+            userInputs.remove(player1.getUniqueId());
+          }
+        });
+      } else if (clearInput) {
+        userInputs.remove(player1.getUniqueId());
       }
       return AnvilGUI.Response.close();
     });
