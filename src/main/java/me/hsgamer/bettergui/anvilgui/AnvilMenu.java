@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import me.hsgamer.bettergui.builder.IconBuilder;
 import me.hsgamer.bettergui.lib.xseries.XMaterial;
 import me.hsgamer.bettergui.object.ClickableItem;
@@ -26,7 +27,7 @@ import org.bukkit.entity.Player;
 
 public class AnvilMenu extends Menu<AnvilGUI> {
 
-  private final Map<UUID, AnvilGUI> anvilGUIList = new HashMap<>();
+  private final Map<UUID, AnvilGUI> anvilGUIList = new ConcurrentHashMap<>();
   private final Map<UUID, String> userInputs = new HashMap<>();
   private MenuTitle title;
   private String text;
