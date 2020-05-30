@@ -8,8 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import me.hsgamer.bettergui.builder.IconBuilder;
-import me.hsgamer.bettergui.lib.xseries.XMaterial;
-import me.hsgamer.bettergui.object.ClickableItem;
 import me.hsgamer.bettergui.object.Icon;
 import me.hsgamer.bettergui.object.LocalVariable;
 import me.hsgamer.bettergui.object.LocalVariableManager;
@@ -101,12 +99,9 @@ public class AnvilMenu extends Menu<AnvilGUI> {
   @Override
   public boolean createInventory(Player player, String[] strings, boolean b) {
     AnvilGUI.Builder builder = new Builder().plugin(getInstance());
-    builder.onClose(player1 -> {
-      if (closeAction != null) {
-        closeAction.getParsed(player1).execute();
-      }
-      remove(player.getUniqueId(), false);
-    });
+    if (closeAction != null) {
+      builder.onClose(player1 -> closeAction.getParsed(player1).execute());
+    }
 
     builder.onComplete((player1, s) -> {
       userInputs.put(player1.getUniqueId(), ChatColor.stripColor(s));
@@ -119,6 +114,7 @@ public class AnvilMenu extends Menu<AnvilGUI> {
       } else if (clearInput) {
         userInputs.remove(player1.getUniqueId());
       }
+      remove(player1.getUniqueId(), false);
       return AnvilGUI.Response.close();
     });
 
@@ -136,12 +132,8 @@ public class AnvilMenu extends Menu<AnvilGUI> {
     }
 
     if (icon != null) {
-      builder.item(
-          icon.createClickableItem(player)
-              .orElse(new ClickableItem(XMaterial.STONE.parseItem(), event -> {
-              }))
-              .getItem()
-      );
+      icon.createClickableItem(player)
+          .ifPresent(clickableItem -> builder.item(clickableItem.getItem()));
     }
 
     anvilGUIList.put(player.getUniqueId(), builder.open(player));
