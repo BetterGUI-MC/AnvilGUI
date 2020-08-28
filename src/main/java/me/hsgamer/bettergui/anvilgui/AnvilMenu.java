@@ -9,12 +9,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import me.hsgamer.bettergui.builder.IconBuilder;
 import me.hsgamer.bettergui.object.Icon;
-import me.hsgamer.bettergui.object.LocalVariable;
-import me.hsgamer.bettergui.object.LocalVariableManager;
 import me.hsgamer.bettergui.object.Menu;
 import me.hsgamer.bettergui.object.property.menu.MenuAction;
 import me.hsgamer.bettergui.object.property.menu.MenuTitle;
-import me.hsgamer.bettergui.util.CommonUtils;
+import me.hsgamer.bettergui.object.variable.LocalVariable;
+import me.hsgamer.bettergui.object.variable.LocalVariableManager;
+import me.hsgamer.bettergui.util.MessageUtils;
+import me.hsgamer.bettergui.util.common.CommonUtils;
 import net.wesjd.anvilgui.AnvilGUI;
 import net.wesjd.anvilgui.AnvilGUI.Builder;
 import org.bukkit.OfflinePlayer;
@@ -127,7 +128,7 @@ public class AnvilMenu extends Menu<AnvilGUI> {
 
     if (text != null) {
       builder.text(
-          CommonUtils.colorize(hasVariables(player, text) ? setVariables(text, player) : text));
+          MessageUtils.colorize(hasVariables(player, text) ? setVariables(text, player) : text));
     }
 
     if (icon != null) {

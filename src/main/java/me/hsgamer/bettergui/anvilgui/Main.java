@@ -7,6 +7,6 @@ public final class Main extends Addon {
 
   @Override
   public void onEnable() {
-    MenuBuilder.register("anvil", AnvilMenu.class);
+    MenuBuilder.register(AnvilMenu::new, "anvil");
   }
 }

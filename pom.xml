@@ -6,7 +6,7 @@
 
   <groupId>me.hsgamer.bettergui</groupId>
   <artifactId>AnvilGUI</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <name>AnvilGUI</name>
@@ -95,13 +95,13 @@
     <dependency>
       <groupId>me.HSGamer</groupId>
       <artifactId>BetterGUI</artifactId>
-      <version>3.3</version>
+      <version>4.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.github.WesJD.AnvilGUI</groupId>
       <artifactId>anvilgui</artifactId>
-      <version>ef71db62ec</version>
+      <version>cee0befbaf</version>
     </dependency>
   </dependencies>
 </project>
