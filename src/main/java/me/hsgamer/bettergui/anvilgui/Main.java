@@ -1,12 +1,12 @@
 package me.hsgamer.bettergui.anvilgui;
 
+import me.hsgamer.bettergui.api.addon.BetterGUIAddon;
 import me.hsgamer.bettergui.builder.MenuBuilder;
-import me.hsgamer.bettergui.object.addon.Addon;
 
-public final class Main extends Addon {
+public final class Main extends BetterGUIAddon {
 
-  @Override
-  public void onEnable() {
-    MenuBuilder.register(AnvilMenu::new, "anvil");
-  }
+    @Override
+    public void onEnable() {
+        MenuBuilder.INSTANCE.register(AnvilMenu::new, "anvil");
+    }
 }

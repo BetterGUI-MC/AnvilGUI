@@ -1,172 +1,160 @@
 package me.hsgamer.bettergui.anvilgui;
 
-import static me.hsgamer.bettergui.BetterGUI.getInstance;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import me.hsgamer.bettergui.builder.IconBuilder;
-import me.hsgamer.bettergui.object.Icon;
-import me.hsgamer.bettergui.object.Menu;
-import me.hsgamer.bettergui.object.property.menu.MenuAction;
-import me.hsgamer.bettergui.object.property.menu.MenuTitle;
-import me.hsgamer.bettergui.object.variable.LocalVariable;
-import me.hsgamer.bettergui.object.variable.LocalVariableManager;
-import me.hsgamer.bettergui.util.MessageUtils;
-import me.hsgamer.bettergui.util.common.CommonUtils;
+import me.hsgamer.bettergui.BetterGUI;
+import me.hsgamer.bettergui.api.action.Action;
+import me.hsgamer.bettergui.api.button.WrappedButton;
+import me.hsgamer.bettergui.api.menu.Menu;
+import me.hsgamer.bettergui.builder.ActionBuilder;
+import me.hsgamer.bettergui.builder.ButtonBuilder;
+import me.hsgamer.bettergui.button.DummyButton;
+import me.hsgamer.bettergui.lib.core.bukkit.utils.MessageUtils;
+import me.hsgamer.bettergui.lib.core.collections.map.CaseInsensitiveStringHashMap;
+import me.hsgamer.bettergui.lib.core.common.CollectionUtils;
+import me.hsgamer.bettergui.lib.core.variable.VariableManager;
+import me.hsgamer.bettergui.lib.simpleyaml.configuration.ConfigurationSection;
+import me.hsgamer.bettergui.lib.simpleyaml.configuration.file.FileConfiguration;
+import me.hsgamer.bettergui.lib.taskchain.TaskChain;
+import me.hsgamer.bettergui.manager.PluginVariableManager;
 import net.wesjd.anvilgui.AnvilGUI;
-import net.wesjd.anvilgui.AnvilGUI.Builder;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
-public class AnvilMenu extends Menu<AnvilGUI> {
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-  private final Map<UUID, AnvilGUI> anvilGUIList = new ConcurrentHashMap<>();
-  private final Map<UUID, String> userInputs = new HashMap<>();
-  private MenuTitle title;
-  private String text;
-  private MenuAction completeAction;
-  private MenuAction closeAction;
-  private Icon icon;
-  private boolean preventClose;
-  private boolean clearInput = false;
+import static me.hsgamer.bettergui.BetterGUI.getInstance;
 
-  public AnvilMenu(String name) {
-    super(name);
-  }
+public class AnvilMenu extends Menu {
+    private final Map<UUID, AnvilGUI> anvilGUIList = new ConcurrentHashMap<>();
+    private final Map<UUID, String> userInputs = new HashMap<>();
+    private final List<Action> completeAction = new LinkedList<>();
+    private final List<Action> closeAction = new LinkedList<>();
+    private String title;
+    private String text;
+    private DummyButton button;
+    private WrappedButton leftButton;
+    private WrappedButton rightButton;
+    private boolean preventClose = false;
+    private boolean clearInput = false;
 
-  @Override
-  public void setFromFile(FileConfiguration fileConfiguration) {
-    fileConfiguration.getKeys(false).forEach(key -> {
-      if (key.equalsIgnoreCase("menu-settings")) {
-        ConfigurationSection section = fileConfiguration.getConfigurationSection("menu-settings");
-        section.getKeys(false).forEach(key1 -> {
-          if (key1.equalsIgnoreCase("title")) {
-            title = new MenuTitle(this);
-            title.setValue(section.get(key1));
-          } else if (key1.equalsIgnoreCase("text")) {
-            text = section.getString(key1);
-          } else if (key1.equalsIgnoreCase("complete-action")) {
-            completeAction = new MenuAction(this);
-            completeAction.setValue(section.get(key1));
-          } else if (key1.equalsIgnoreCase("close-action")) {
-            closeAction = new MenuAction(this);
-            closeAction.setValue(section.get(key1));
-          } else if (key1.equalsIgnoreCase("prevent-close")) {
-            preventClose = section.getBoolean(key1);
-          } else if (key1.equalsIgnoreCase("command")) {
-            CommonUtils.createStringListFromObject(section.get(key1), true)
-                .forEach(s -> {
-                  if (s.contains(" ")) {
-                    getInstance().getLogger().warning(
-                        "Illegal characters in command '" + s + "'" + "in the menu '" + getName()
-                            + "'. Ignored");
-                  } else {
-                    getInstance().getCommandManager().registerMenuCommand(s, this);
-                  }
-                });
-          } else if (key1.equalsIgnoreCase("clear-input-on-complete")) {
-            clearInput = section.getBoolean(key1);
-          }
+    public AnvilMenu(String name) {
+        super(name);
+        PluginVariableManager.register("menu_" + name + "anvil_input", (original, uuid) -> userInputs.getOrDefault(uuid, ""));
+    }
+
+    @Override
+    public void setFromFile(FileConfiguration fileConfiguration) {
+        fileConfiguration.getValues(false).forEach((key, value) -> {
+            if (!(value instanceof ConfigurationSection)) {
+                return;
+            }
+            ConfigurationSection section = (ConfigurationSection) value;
+            if (key.equalsIgnoreCase("menu-settings")) {
+                Map<String, Object> values = new CaseInsensitiveStringHashMap<>(section.getValues(false));
+                Optional.ofNullable(values.get("title")).map(String::valueOf).ifPresent(string -> this.title = string);
+                Optional.ofNullable(values.get("text")).map(String::valueOf).ifPresent(string -> this.text = string);
+                Optional.ofNullable(values.get("complete-action")).ifPresent(o -> this.completeAction.addAll(ActionBuilder.INSTANCE.getActions(this, o)));
+                Optional.ofNullable(values.get("close-action")).ifPresent(o -> this.closeAction.addAll(ActionBuilder.INSTANCE.getActions(this, o)));
+                Optional.ofNullable(values.get("prevent-close")).map(String::valueOf).map(Boolean::parseBoolean).ifPresent(bool -> this.preventClose = bool);
+                Optional.ofNullable(values.get("clear-input-on-complete")).map(String::valueOf).map(Boolean::parseBoolean).ifPresent(bool -> this.clearInput = bool);
+                Optional.ofNullable(values.get("command"))
+                        .map(o -> CollectionUtils.createStringListFromObject(o, true))
+                        .ifPresent(list -> {
+                            for (String s : list) {
+                                if (s.contains(" ")) {
+                                    getInstance().getLogger().warning("Illegal characters in command '" + s + "'" + "in the menu '" + getName() + "'. Ignored");
+                                } else {
+                                    getInstance().getCommandManager().registerMenuCommand(s, this);
+                                }
+                            }
+                        });
+            } else if (key.equalsIgnoreCase("left-button")) {
+                leftButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_left_button", section);
+            } else if (key.equalsIgnoreCase("right-button")) {
+                rightButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_right_button", section);
+            } else {
+                button = new DummyButton(this);
+                button.setName("menu_" + getName() + "_button");
+                button.setFromSection(section);
+            }
         });
-      } else {
-        icon = IconBuilder.getIcon(this, fileConfiguration.getConfigurationSection(key));
-      }
-    });
-
-    registerVariable("anvil_input", new LocalVariable() {
-      @Override
-      public String getIdentifier() {
-        return "anvil_input";
-      }
-
-      @Override
-      public LocalVariableManager<?> getInvolved() {
-        return getParent();
-      }
-
-      @Override
-      public String getReplacement(OfflinePlayer offlinePlayer, String s) {
-        return userInputs.getOrDefault(offlinePlayer.getUniqueId(), "");
-      }
-    });
-  }
-
-  @Override
-  public boolean createInventory(Player player, String[] strings, boolean b) {
-    AnvilGUI.Builder builder = new Builder().plugin(getInstance());
-    if (closeAction != null) {
-      builder.onClose(player1 -> closeAction.getParsed(player1).execute());
     }
 
-    builder.onComplete((player1, s) -> {
-      userInputs.put(player1.getUniqueId(), s);
-      if (completeAction != null) {
-        completeAction.getParsed(player1).execute(() -> {
-          if (clearInput) {
-            userInputs.remove(player1.getUniqueId());
-          }
+    @Override
+    public boolean createInventory(Player player, String[] strings, boolean b) {
+        AnvilGUI.Builder builder = new AnvilGUI.Builder().plugin(getInstance());
+        builder.onClose(player1 -> {
+            TaskChain<?> taskChain = BetterGUI.newChain();
+            closeAction.forEach(action -> action.addToTaskChain(player1.getUniqueId(), taskChain));
+            taskChain.execute();
         });
-      } else if (clearInput) {
-        userInputs.remove(player1.getUniqueId());
-      }
-      remove(player1.getUniqueId(), false);
-      return AnvilGUI.Response.close();
-    });
 
-    if (title != null) {
-      builder.title(title.getParsed(player));
+        builder.onComplete((player1, s) -> {
+            userInputs.put(player1.getUniqueId(), s);
+            TaskChain<?> taskChain = BetterGUI.newChain();
+            completeAction.forEach(action -> action.addToTaskChain(player1.getUniqueId(), taskChain));
+            taskChain.execute();
+            if (clearInput) {
+                userInputs.remove(player1.getUniqueId());
+            }
+            remove(player1.getUniqueId(), false);
+            return AnvilGUI.Response.close();
+        });
+
+        if (title != null) {
+            builder.title(VariableManager.setVariables(title, player.getUniqueId()));
+        }
+
+        if (preventClose) {
+            builder.preventClose();
+        }
+
+        if (text != null) {
+            builder.text(MessageUtils.colorize(VariableManager.setVariables(text, player.getUniqueId())));
+        }
+
+        if (button != null) {
+            builder.item(button.getItemStack(player.getUniqueId()));
+        }
+
+        if (leftButton != null) {
+            builder.itemLeft(leftButton.getItemStack(player.getUniqueId()));
+        }
+
+        if (rightButton != null) {
+            builder.itemRight(rightButton.getItemStack(player.getUniqueId()));
+        }
+
+        anvilGUIList.put(player.getUniqueId(), builder.open(player));
+        return true;
     }
 
-    if (preventClose) {
-      builder.preventClose();
+    @Override
+    public void updateInventory(Player player) {
+        // EMPTY
     }
 
-    if (text != null) {
-      builder.text(
-          MessageUtils.colorize(hasVariables(player, text) ? setVariables(text, player) : text));
+    @Override
+    public void closeInventory(Player player) {
+        remove(player.getUniqueId(), true);
     }
 
-    if (icon != null) {
-      icon.createClickableItem(player)
-          .ifPresent(clickableItem -> builder.item(clickableItem.getItem()));
+    @Override
+    public void closeAll() {
+        anvilGUIList.keySet().forEach(uuid -> remove(uuid, true));
+        anvilGUIList.clear();
     }
 
-    anvilGUIList.put(player.getUniqueId(), builder.open(player));
-    return true;
-  }
+    @Override
+    public Object getOriginal() {
+        return anvilGUIList;
+    }
 
-  @Override
-  public void updateInventory(Player player) {
-    // Ignored
-  }
-
-  @Override
-  public void closeInventory(Player player) {
-    remove(player.getUniqueId(), true);
-  }
-
-  @Override
-  public void closeAll() {
-    anvilGUIList.keySet().forEach(uuid -> remove(uuid, true));
-    anvilGUIList.clear();
-  }
-
-  @Override
-  public Optional<AnvilGUI> getInventory(Player player) {
-    return Optional.ofNullable(anvilGUIList.get(player.getUniqueId()));
-  }
-
-  private void remove(UUID uuid, boolean closeInventory) {
-    anvilGUIList.computeIfPresent(uuid, (uuid1, anvilGUI) -> {
-      if (closeInventory) {
-        anvilGUI.closeInventory();
-      }
-      return null;
-    });
-  }
+    private void remove(UUID uuid, boolean closeInventory) {
+        anvilGUIList.computeIfPresent(uuid, (uuid1, anvilGUI) -> {
+            if (closeInventory) {
+                anvilGUI.closeInventory();
+            }
+            return null;
+        });
+    }
 }
