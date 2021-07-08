@@ -8,11 +8,10 @@ import me.hsgamer.bettergui.builder.ActionBuilder;
 import me.hsgamer.bettergui.builder.ButtonBuilder;
 import me.hsgamer.bettergui.button.DummyButton;
 import me.hsgamer.bettergui.lib.core.bukkit.utils.MessageUtils;
-import me.hsgamer.bettergui.lib.core.collections.map.CaseInsensitiveStringHashMap;
+import me.hsgamer.bettergui.lib.core.collections.map.CaseInsensitiveStringMap;
 import me.hsgamer.bettergui.lib.core.common.CollectionUtils;
+import me.hsgamer.bettergui.lib.core.config.Config;
 import me.hsgamer.bettergui.lib.core.variable.VariableManager;
-import me.hsgamer.bettergui.lib.simpleyaml.configuration.ConfigurationSection;
-import me.hsgamer.bettergui.lib.simpleyaml.configuration.file.FileConfiguration;
 import me.hsgamer.bettergui.lib.taskchain.TaskChain;
 import me.hsgamer.bettergui.manager.PluginVariableManager;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -42,14 +41,13 @@ public class AnvilMenu extends Menu {
     }
 
     @Override
-    public void setFromFile(FileConfiguration fileConfiguration) {
-        fileConfiguration.getValues(false).forEach((key, value) -> {
-            if (!(value instanceof ConfigurationSection)) {
+    public void setFromConfig(Config config) {
+        config.getNormalizedValues(false).forEach((key, value) -> {
+            if (!(value instanceof Map)) {
                 return;
             }
-            ConfigurationSection section = (ConfigurationSection) value;
+            Map<String, Object> values = new CaseInsensitiveStringMap<>((Map<String, Object>) value);
             if (key.equalsIgnoreCase("menu-settings")) {
-                Map<String, Object> values = new CaseInsensitiveStringHashMap<>(section.getValues(false));
                 Optional.ofNullable(values.get("title")).map(String::valueOf).ifPresent(string -> this.title = string);
                 Optional.ofNullable(values.get("text")).map(String::valueOf).ifPresent(string -> this.text = string);
                 Optional.ofNullable(values.get("complete-action")).ifPresent(o -> this.completeAction.addAll(ActionBuilder.INSTANCE.getActions(this, o)));
@@ -68,13 +66,13 @@ public class AnvilMenu extends Menu {
                             }
                         });
             } else if (key.equalsIgnoreCase("left-button")) {
-                leftButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_left_button", section);
+                leftButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_left_button", values);
             } else if (key.equalsIgnoreCase("right-button")) {
-                rightButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_right_button", section);
+                rightButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_right_button", values);
             } else {
                 button = new DummyButton(this);
                 button.setName("menu_" + getName() + "_button");
-                button.setFromSection(section);
+                button.setFromSection(values);
             }
         });
     }
@@ -113,7 +111,7 @@ public class AnvilMenu extends Menu {
         }
 
         if (button != null) {
-            builder.item(button.getItemStack(player.getUniqueId()));
+            builder.itemLeft(button.getItemStack(player.getUniqueId()));
         }
 
         if (leftButton != null) {
