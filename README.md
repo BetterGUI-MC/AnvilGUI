@@ -3,7 +3,7 @@
 ### Info
 * This is a special menu type only for getting inputs.
 * In this menu type, the addon only apply ONE icon.
-* The variable `{anvil_input}` stores the user's input.
+* The variable `{menu_<menu-name>_anvil_input}` stores the user's input.
 ### Format
 ```yaml
 # Settings
@@ -13,8 +13,16 @@ menu-settings:
   <setting2>
   ...
 
-# Icon
-icon:
+# Left Button
+left-button:
+  ...
+
+# Right Button
+right-button:
+  ...
+
+# Button
+button:
   ...
 ```
 ### Available Settings
@@ -34,11 +42,11 @@ menu-settings:
   text: "What is your name?"
   clear-input-on-complete: true
   complete-action:
-  - "tell: &aHello, {anvil_input}"
+  - "tell: &aHello, {menu_<menu-name>_anvil_input}"
   prevent-close: true
   close-action:
   - "tell: &cYou closed the menu"
   
-icon:
+button:
   id: paper
 ```
