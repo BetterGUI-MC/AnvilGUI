@@ -3,7 +3,7 @@
 ### Info
 * This is a special menu type only for getting inputs.
 * In this menu type, the addon only apply ONE icon.
-* The variable `{menu_<menu-name>_anvil_input}` stores the user's input.
+* The variable `{menu_<menu-name>_anvil_input}` stores the user's input (replace `<file-name>` by the menu's file name).
 ### Format
 ```yaml
 # Settings
