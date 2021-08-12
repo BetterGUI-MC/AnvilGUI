@@ -37,7 +37,7 @@ public class AnvilMenu extends Menu {
 
     public AnvilMenu(String name) {
         super(name);
-        PluginVariableManager.register("menu_" + name + "anvil_input", (original, uuid) -> userInputs.getOrDefault(uuid, ""));
+        PluginVariableManager.register("menu_" + name + "_anvil_input", (original, uuid) -> userInputs.getOrDefault(uuid, ""));
     }
 
     @Override
