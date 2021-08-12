@@ -6,7 +6,7 @@
 
   <groupId>me.hsgamer.bettergui</groupId>
   <artifactId>AnvilGUI</artifactId>
-  <version>3.0</version>
+  <version>3.1</version>
   <packaging>jar</packaging>
 
   <name>AnvilGUI</name>
@@ -17,6 +17,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.mainClass>me.hsgamer.bettergui.anvilgui.Main</project.mainClass>
   </properties>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>maven-snapshots</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <build>
     <defaultGoal>clean package</defaultGoal>
@@ -34,7 +41,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
+        <version>3.3.0-SNAPSHOT</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -94,7 +101,7 @@
     <dependency>
       <groupId>net.wesjd</groupId>
       <artifactId>anvilgui</artifactId>
-      <version>1.5.0-SNAPSHOT</version>
+      <version>1.5.2-SNAPSHOT</version>
     </dependency>
   </dependencies>
 </project>
