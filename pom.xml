@@ -6,14 +6,14 @@
 
   <groupId>me.hsgamer.bettergui</groupId>
   <artifactId>AnvilGUI</artifactId>
-  <version>3.3</version>
+  <version>3.4</version>
   <packaging>jar</packaging>
 
   <name>AnvilGUI</name>
   <description>Get inputs in a fancy way</description>
 
   <properties>
-    <java.version>1.8</java.version>
+    <java.version>16</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.mainClass>me.hsgamer.bettergui.anvilgui.Main</project.mainClass>
   </properties>
