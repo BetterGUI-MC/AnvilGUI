@@ -1,19 +1,17 @@
 package me.hsgamer.bettergui.anvilgui;
 
 import me.hsgamer.bettergui.BetterGUI;
-import me.hsgamer.bettergui.api.action.Action;
+import me.hsgamer.bettergui.action.ActionApplier;
 import me.hsgamer.bettergui.api.button.WrappedButton;
 import me.hsgamer.bettergui.api.menu.Menu;
-import me.hsgamer.bettergui.builder.ActionBuilder;
 import me.hsgamer.bettergui.builder.ButtonBuilder;
-import me.hsgamer.bettergui.button.DummyButton;
-import me.hsgamer.bettergui.lib.core.bukkit.utils.MessageUtils;
-import me.hsgamer.bettergui.lib.core.collections.map.CaseInsensitiveStringMap;
-import me.hsgamer.bettergui.lib.core.common.CollectionUtils;
-import me.hsgamer.bettergui.lib.core.config.Config;
-import me.hsgamer.bettergui.lib.core.variable.VariableManager;
-import me.hsgamer.bettergui.lib.taskchain.TaskChain;
-import me.hsgamer.bettergui.manager.PluginVariableManager;
+import me.hsgamer.bettergui.button.WrappedDummyButton;
+import me.hsgamer.bettergui.util.ProcessApplierConstants;
+import me.hsgamer.hscore.bukkit.utils.MessageUtils;
+import me.hsgamer.hscore.collections.map.CaseInsensitiveStringMap;
+import me.hsgamer.hscore.common.CollectionUtils;
+import me.hsgamer.hscore.config.Config;
+import me.hsgamer.hscore.variable.VariableManager;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
 
@@ -25,33 +23,32 @@ import static me.hsgamer.bettergui.BetterGUI.getInstance;
 public class AnvilMenu extends Menu {
     private final Map<UUID, AnvilGUI> anvilGUIList = new ConcurrentHashMap<>();
     private final Map<UUID, String> userInputs = new HashMap<>();
-    private final List<Action> completeAction = new LinkedList<>();
-    private final List<Action> closeAction = new LinkedList<>();
+    private ActionApplier completeAction = new ActionApplier(Collections.emptyList());
+    private ActionApplier closeAction = new ActionApplier(Collections.emptyList());
     private String title;
     private String text;
-    private DummyButton button;
+    private WrappedButton button;
     private WrappedButton leftButton;
     private WrappedButton rightButton;
     private boolean preventClose = false;
     private boolean clearInput = false;
 
-    public AnvilMenu(String name) {
-        super(name);
-        PluginVariableManager.register("menu_" + name + "_anvil_input", (original, uuid) -> userInputs.getOrDefault(uuid, ""));
-    }
-
-    @Override
-    public void setFromConfig(Config config) {
-        config.getNormalizedValues(false).forEach((key, value) -> {
+    protected AnvilMenu(Config config) {
+        super(config);
+        variableManager.register("anvil_input", (original, uuid) -> userInputs.getOrDefault(uuid, ""));
+        for (Map.Entry<String, Object> entry : config.getNormalizedValues(false).entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
             if (!(value instanceof Map)) {
-                return;
+                continue;
             }
+            //noinspection unchecked
             Map<String, Object> values = new CaseInsensitiveStringMap<>((Map<String, Object>) value);
             if (key.equalsIgnoreCase("menu-settings")) {
                 Optional.ofNullable(values.get("title")).map(String::valueOf).ifPresent(string -> this.title = string);
                 Optional.ofNullable(values.get("text")).map(String::valueOf).ifPresent(string -> this.text = string);
-                Optional.ofNullable(values.get("complete-action")).ifPresent(o -> this.completeAction.addAll(ActionBuilder.INSTANCE.getActions(this, o)));
-                Optional.ofNullable(values.get("close-action")).ifPresent(o -> this.closeAction.addAll(ActionBuilder.INSTANCE.getActions(this, o)));
+                this.completeAction = Optional.ofNullable(values.get("complete-action")).map(o -> new ActionApplier(this, o)).orElse(completeAction);
+                this.closeAction = Optional.ofNullable(values.get("close-action")).map(o -> new ActionApplier(this, o)).orElse(closeAction);
                 Optional.ofNullable(values.get("prevent-close")).map(String::valueOf).map(Boolean::parseBoolean).ifPresent(bool -> this.preventClose = bool);
                 Optional.ofNullable(values.get("clear-input-on-complete")).map(String::valueOf).map(Boolean::parseBoolean).ifPresent(bool -> this.clearInput = bool);
                 Optional.ofNullable(values.get("command"))
@@ -66,40 +63,42 @@ public class AnvilMenu extends Menu {
                             }
                         });
             } else if (key.equalsIgnoreCase("left-button")) {
-                leftButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_left_button", values);
+                leftButton = ButtonBuilder.INSTANCE.build(new ButtonBuilder.Input(this, "left_button", values)).orElse(null);
             } else if (key.equalsIgnoreCase("right-button")) {
-                rightButton = ButtonBuilder.INSTANCE.getButton(this, "menu_" + getName() + "_right_button", values);
+                rightButton = ButtonBuilder.INSTANCE.build(new ButtonBuilder.Input(this, "right_button", values)).orElse(null);
             } else {
-                button = new DummyButton(this);
-                button.setName("menu_" + getName() + "_button");
-                button.setFromSection(values);
+                button = new WrappedDummyButton(new ButtonBuilder.Input(this, "button", values));
             }
-        });
+        }
     }
 
     @Override
-    public boolean createInventory(Player player, String[] strings, boolean b) {
+    public boolean create(Player player, String[] strings, boolean bypass) {
         AnvilGUI.Builder builder = new AnvilGUI.Builder().plugin(getInstance());
-        builder.onClose(player1 -> {
-            TaskChain<?> taskChain = BetterGUI.newChain();
-            closeAction.forEach(action -> action.addToTaskChain(player1.getUniqueId(), taskChain));
-            taskChain.execute();
-        });
+        builder.onClose(player1 -> BetterGUI.runBatchRunnable(batchRunnable ->
+                batchRunnable
+                        .getTaskPool(ProcessApplierConstants.ACTION_STAGE)
+                        .addLast(process -> closeAction.accept(player1.getUniqueId(), process))
+        ));
 
         builder.onComplete((player1, s) -> {
             userInputs.put(player1.getUniqueId(), s);
-            TaskChain<?> taskChain = BetterGUI.newChain();
-            completeAction.forEach(action -> action.addToTaskChain(player1.getUniqueId(), taskChain));
-            taskChain.execute();
-            if (clearInput) {
-                userInputs.remove(player1.getUniqueId());
-            }
+            BetterGUI.runBatchRunnable(batchRunnable -> {
+                batchRunnable
+                        .getTaskPool(ProcessApplierConstants.ACTION_STAGE)
+                        .addLast(process -> completeAction.accept(player1.getUniqueId(), process));
+                if (clearInput) {
+                    batchRunnable
+                            .getTaskPool(ProcessApplierConstants.ACTION_STAGE + 1)
+                            .addLast(process -> userInputs.remove(player1.getUniqueId()));
+                }
+            });
             remove(player1.getUniqueId(), false);
             return AnvilGUI.Response.close();
         });
 
         if (title != null) {
-            builder.title(VariableManager.setVariables(title, player.getUniqueId()));
+            builder.title(replace(title, player.getUniqueId()));
         }
 
         if (preventClose) {
@@ -127,12 +126,12 @@ public class AnvilMenu extends Menu {
     }
 
     @Override
-    public void updateInventory(Player player) {
+    public void update(Player player) {
         // EMPTY
     }
 
     @Override
-    public void closeInventory(Player player) {
+    public void close(Player player) {
         remove(player.getUniqueId(), true);
     }
 
@@ -140,11 +139,6 @@ public class AnvilMenu extends Menu {
     public void closeAll() {
         anvilGUIList.keySet().forEach(uuid -> remove(uuid, true));
         anvilGUIList.clear();
-    }
-
-    @Override
-    public Object getOriginal() {
-        return anvilGUIList;
     }
 
     private void remove(UUID uuid, boolean closeInventory) {

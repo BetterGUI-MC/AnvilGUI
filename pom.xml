@@ -4,17 +4,20 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>me.hsgamer.bettergui</groupId>
+  <parent>
+    <groupId>me.hsgamer.bettergui</groupId>
+    <artifactId>addon-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>AnvilGUI</artifactId>
-  <version>3.6</version>
+  <version>4.0</version>
   <packaging>jar</packaging>
 
   <name>AnvilGUI</name>
   <description>Get inputs in a fancy way</description>
 
   <properties>
-    <java.version>1.8</java.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.mainClass>me.hsgamer.bettergui.anvilgui.Main</project.mainClass>
   </properties>
 
@@ -26,18 +29,7 @@
   </pluginRepositories>
 
   <build>
-    <defaultGoal>clean package</defaultGoal>
-    <finalName>${project.name}</finalName>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.1</version>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -51,6 +43,19 @@
             <configuration>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <relocations>
+                <!-- HSCore -->
+                <relocation>
+                  <pattern>me.hsgamer.hscore</pattern>
+                  <shadedPattern>me.hsgamer.bettergui.lib.core</shadedPattern>
+                </relocation>
+
+                <!-- bStats -->
+                <relocation>
+                  <pattern>org.bstats</pattern>
+                  <shadedPattern>me.hsgamer.bettergui.lib.bstats</shadedPattern>
+                </relocation>
+
+                <!-- AnvilGUI -->
                 <relocation>
                   <pattern>net.wesjd.anvilgui</pattern>
                   <shadedPattern>me.hsgamer.bettergui.anvilgui.lib.anvilgui</shadedPattern>
@@ -61,42 +66,16 @@
         </executions>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>true</filtering>
-      </resource>
-    </resources>
   </build>
 
   <repositories>
     <repository>
-      <id>papermc-repo</id>
-      <url>https://papermc.io/repo/repository/maven-public/</url>
-    </repository>
-    <repository>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/groups/public/</url>
-    </repository>
-    <repository>
-      <id>codemc-repo</id>
+      <id>codemc-public</id>
       <url>https://repo.codemc.io/repository/maven-public/</url>
     </repository>
   </repositories>
 
   <dependencies>
-    <dependency>
-      <groupId>com.destroystokyo.paper</groupId>
-      <artifactId>paper-api</artifactId>
-      <version>1.12.2-R0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>me.HSGamer</groupId>
-      <artifactId>BetterGUI</artifactId>
-      <version>6.0</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>net.wesjd</groupId>
       <artifactId>anvilgui</artifactId>
