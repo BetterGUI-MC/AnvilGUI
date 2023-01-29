@@ -7,13 +7,16 @@ import me.hsgamer.bettergui.api.menu.Menu;
 import me.hsgamer.bettergui.builder.ButtonBuilder;
 import me.hsgamer.bettergui.button.WrappedDummyButton;
 import me.hsgamer.bettergui.util.ProcessApplierConstants;
+import me.hsgamer.hscore.bukkit.gui.object.BukkitItem;
 import me.hsgamer.hscore.bukkit.utils.MessageUtils;
 import me.hsgamer.hscore.collections.map.CaseInsensitiveStringMap;
 import me.hsgamer.hscore.common.CollectionUtils;
 import me.hsgamer.hscore.config.Config;
+import me.hsgamer.hscore.minecraft.gui.object.Item;
 import me.hsgamer.hscore.variable.VariableManager;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,6 +75,13 @@ public class AnvilMenu extends Menu {
         }
     }
 
+    private static Optional<ItemStack> getItem(Item item) {
+        if (item instanceof BukkitItem) {
+            return Optional.of(((BukkitItem) item).getItemStack());
+        }
+        return Optional.empty();
+    }
+
     @Override
     public boolean create(Player player, String[] strings, boolean bypass) {
         AnvilGUI.Builder builder = new AnvilGUI.Builder().plugin(getInstance());
@@ -110,15 +120,15 @@ public class AnvilMenu extends Menu {
         }
 
         if (button != null) {
-            builder.itemLeft(button.getItemStack(player.getUniqueId()));
+            getItem(button.getItem(player.getUniqueId())).ifPresent(builder::itemLeft);
         }
 
         if (leftButton != null) {
-            builder.itemLeft(leftButton.getItemStack(player.getUniqueId()));
+            getItem(leftButton.getItem(player.getUniqueId())).ifPresent(builder::itemLeft);
         }
 
         if (rightButton != null) {
-            builder.itemRight(rightButton.getItemStack(player.getUniqueId()));
+            getItem(rightButton.getItem(player.getUniqueId())).ifPresent(builder::itemRight);
         }
 
         anvilGUIList.put(player.getUniqueId(), builder.open(player));
