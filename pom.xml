@@ -11,13 +11,14 @@
   </parent>
 
   <artifactId>AnvilGUI</artifactId>
-  <version>5.0</version>
+  <version>5.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>AnvilGUI</name>
   <description>Get inputs in a fancy way</description>
 
   <properties>
+    <plugin.version>8.6</plugin.version>
     <project.mainClass>me.hsgamer.bettergui.anvilgui.Main</project.mainClass>
   </properties>
 
