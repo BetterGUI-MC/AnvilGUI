@@ -7,13 +7,12 @@ import me.hsgamer.bettergui.api.menu.Menu;
 import me.hsgamer.bettergui.builder.ButtonBuilder;
 import me.hsgamer.bettergui.button.WrappedDummyButton;
 import me.hsgamer.bettergui.util.ProcessApplierConstants;
+import me.hsgamer.bettergui.util.StringReplacerApplier;
 import me.hsgamer.hscore.bukkit.gui.object.BukkitItem;
-import me.hsgamer.hscore.bukkit.utils.MessageUtils;
 import me.hsgamer.hscore.collections.map.CaseInsensitiveStringMap;
 import me.hsgamer.hscore.common.CollectionUtils;
 import me.hsgamer.hscore.config.Config;
 import me.hsgamer.hscore.minecraft.gui.object.Item;
-import me.hsgamer.hscore.variable.VariableManager;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -116,7 +115,7 @@ public class AnvilMenu extends Menu {
         }
 
         if (text != null) {
-            builder.text(MessageUtils.colorize(VariableManager.setVariables(text, player.getUniqueId())));
+            builder.text(StringReplacerApplier.replace(text, player.getUniqueId(), this));
         }
 
         if (button != null) {
