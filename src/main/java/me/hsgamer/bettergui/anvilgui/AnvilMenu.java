@@ -9,22 +9,25 @@ import me.hsgamer.bettergui.button.WrappedDummyButton;
 import me.hsgamer.bettergui.util.ProcessApplierConstants;
 import me.hsgamer.bettergui.util.StringReplacerApplier;
 import me.hsgamer.hscore.bukkit.gui.object.BukkitItem;
+import me.hsgamer.hscore.bukkit.scheduler.Scheduler;
 import me.hsgamer.hscore.collections.map.CaseInsensitiveStringMap;
 import me.hsgamer.hscore.common.CollectionUtils;
 import me.hsgamer.hscore.config.Config;
 import me.hsgamer.hscore.minecraft.gui.object.Item;
+import me.hsgamer.hscore.task.BatchRunnable;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static me.hsgamer.bettergui.BetterGUI.getInstance;
 
 public class AnvilMenu extends Menu {
     private final Map<UUID, AnvilGUI> anvilGUIList = new ConcurrentHashMap<>();
-    private final Map<UUID, String> userInputs = new HashMap<>();
+    private final Map<UUID, String> userInputs = new ConcurrentHashMap<>();
     private ActionApplier completeAction = new ActionApplier(Collections.emptyList());
     private ActionApplier closeAction = new ActionApplier(Collections.emptyList());
     private String title;
@@ -84,26 +87,34 @@ public class AnvilMenu extends Menu {
     @Override
     public boolean create(Player player, String[] strings, boolean bypass) {
         AnvilGUI.Builder builder = new AnvilGUI.Builder().plugin(getInstance());
-        builder.onClose(player1 -> BetterGUI.runBatchRunnable(batchRunnable ->
+        builder.onClose(stateSnapshot -> BetterGUI.runBatchRunnable(batchRunnable ->
                 batchRunnable
                         .getTaskPool(ProcessApplierConstants.ACTION_STAGE)
-                        .addLast(process -> closeAction.accept(player1.getUniqueId(), process))
+                        .addLast(process -> closeAction.accept(stateSnapshot.getPlayer().getUniqueId(), process))
         ));
+        builder.mainThreadExecutor(runnable -> Scheduler.CURRENT.runEntityTask(BetterGUI.getInstance(), player, runnable, true));
+        builder.onClickAsync((slot, stateSnapshot) -> {
+            if (slot != AnvilGUI.Slot.OUTPUT) {
+                return CompletableFuture.completedFuture(Collections.emptyList());
+            }
 
-        builder.onComplete((player1, s) -> {
-            userInputs.put(player1.getUniqueId(), s);
-            BetterGUI.runBatchRunnable(batchRunnable -> {
+            userInputs.put(stateSnapshot.getPlayer().getUniqueId(), stateSnapshot.getText());
+
+            BatchRunnable batchRunnable = new BatchRunnable();
+            batchRunnable
+                    .getTaskPool(ProcessApplierConstants.ACTION_STAGE)
+                    .addLast(process -> completeAction.accept(stateSnapshot.getPlayer().getUniqueId(), process));
+            if (clearInput) {
                 batchRunnable
-                        .getTaskPool(ProcessApplierConstants.ACTION_STAGE)
-                        .addLast(process -> completeAction.accept(player1.getUniqueId(), process));
-                if (clearInput) {
-                    batchRunnable
-                            .getTaskPool(ProcessApplierConstants.ACTION_STAGE + 1)
-                            .addLast(process -> userInputs.remove(player1.getUniqueId()));
-                }
-            });
-            remove(player1.getUniqueId(), false);
-            return AnvilGUI.Response.close();
+                        .getTaskPool(ProcessApplierConstants.ACTION_STAGE + 1)
+                        .addLast(process -> userInputs.remove(stateSnapshot.getPlayer().getUniqueId()));
+            }
+
+            return CompletableFuture.completedFuture(Arrays.asList(
+                    AnvilGUI.ResponseAction.run(batchRunnable),
+                    AnvilGUI.ResponseAction.run(() -> remove(stateSnapshot.getPlayer().getUniqueId(), false)),
+                    AnvilGUI.ResponseAction.close()
+            ));
         });
 
         if (title != null) {
@@ -119,7 +130,7 @@ public class AnvilMenu extends Menu {
         }
 
         if (button != null) {
-            getItem(button.getItem(player.getUniqueId())).ifPresent(builder::itemLeft);
+            getItem(button.getItem(player.getUniqueId())).ifPresent(builder::itemOutput);
         }
 
         if (leftButton != null) {
