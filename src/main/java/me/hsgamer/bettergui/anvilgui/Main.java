@@ -1,9 +1,9 @@
 package me.hsgamer.bettergui.anvilgui;
 
 import me.hsgamer.bettergui.builder.MenuBuilder;
-import me.hsgamer.hscore.bukkit.addon.PluginAddon;
+import me.hsgamer.hscore.expansion.common.Expansion;
 
-public final class Main extends PluginAddon {
+public final class Main implements Expansion {
 
     @Override
     public void onEnable() {
