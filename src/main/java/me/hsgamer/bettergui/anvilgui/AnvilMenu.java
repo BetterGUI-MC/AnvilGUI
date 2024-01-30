@@ -121,11 +121,12 @@ public class AnvilMenu extends StandardMenu {
                         .addLast(() -> userInputs.remove(stateSnapshot.getPlayer().getUniqueId()));
             }
 
-            return CompletableFuture.completedFuture(Arrays.asList(
-                    AnvilGUI.ResponseAction.run(batchRunnable),
-                    AnvilGUI.ResponseAction.run(() -> remove(stateSnapshot.getPlayer().getUniqueId(), false)),
-                    AnvilGUI.ResponseAction.close()
-            ));
+            return CompletableFuture
+                    .runAsync(batchRunnable, runnable -> Scheduler.current().async().runTask(runnable))
+                    .thenApply(v -> Arrays.asList(
+                            AnvilGUI.ResponseAction.run(() -> remove(stateSnapshot.getPlayer().getUniqueId(), false)),
+                            AnvilGUI.ResponseAction.close()
+                    ));
         });
 
         if (title != null) {
