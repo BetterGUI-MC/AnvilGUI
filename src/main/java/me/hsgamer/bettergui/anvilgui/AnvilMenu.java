@@ -71,10 +71,17 @@ public class AnvilMenu extends StandardMenu {
             Map<String, Object> values = new CaseInsensitiveStringMap<>((Map<String, Object>) value);
             if (key.equals(new CaseInsensitivePathString("left-button"))) {
                 leftButton = ButtonBuilder.INSTANCE.build(new ButtonBuilder.Input(this, "left_button", values)).orElse(null);
+                if (leftButton != null) {
+                    leftButton.init();
+                }
             } else if (key.equals(new CaseInsensitivePathString("right-button"))) {
                 rightButton = ButtonBuilder.INSTANCE.build(new ButtonBuilder.Input(this, "right_button", values)).orElse(null);
+                if (rightButton != null) {
+                    rightButton.init();
+                }
             } else {
                 button = new WrappedDummyButton(new ButtonBuilder.Input(this, "button", values));
+                button.init();
             }
         }
     }
@@ -96,7 +103,7 @@ public class AnvilMenu extends StandardMenu {
                     .addLast(process -> closeAction.accept(stateSnapshot.getPlayer().getUniqueId(), process));
             Scheduler.current().async().runTask(batchRunnable);
         });
-        builder.mainThreadExecutor(runnable -> Scheduler.current().async().runEntityTask(player, runnable));
+        builder.mainThreadExecutor(runnable -> Scheduler.current().sync().runEntityTask(player, runnable));
         builder.onClickAsync((slot, stateSnapshot) -> {
             if (slot != AnvilGUI.Slot.OUTPUT) {
                 return CompletableFuture.completedFuture(Collections.emptyList());
@@ -163,6 +170,18 @@ public class AnvilMenu extends StandardMenu {
     public void closeAll() {
         anvilGUIList.keySet().forEach(uuid -> remove(uuid, true));
         anvilGUIList.clear();
+
+        if (leftButton != null) {
+            leftButton.stop();
+        }
+
+        if (rightButton != null) {
+            rightButton.stop();
+        }
+
+        if (button != null) {
+            button.stop();
+        }
     }
 
     private void remove(UUID uuid, boolean closeInventory) {
