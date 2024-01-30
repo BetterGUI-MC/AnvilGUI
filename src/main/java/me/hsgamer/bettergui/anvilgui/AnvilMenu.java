@@ -111,7 +111,7 @@ public class AnvilMenu extends StandardMenu {
             if (clearInput) {
                 batchRunnable
                         .getTaskPool(ProcessApplierConstants.ACTION_STAGE + 1)
-                        .addLast(process -> userInputs.remove(stateSnapshot.getPlayer().getUniqueId()));
+                        .addLast(() -> userInputs.remove(stateSnapshot.getPlayer().getUniqueId()));
             }
 
             return CompletableFuture.completedFuture(Arrays.asList(
