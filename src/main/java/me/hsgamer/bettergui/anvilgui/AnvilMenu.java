@@ -5,15 +5,16 @@ import me.hsgamer.bettergui.api.button.WrappedButton;
 import me.hsgamer.bettergui.api.menu.StandardMenu;
 import me.hsgamer.bettergui.builder.ButtonBuilder;
 import me.hsgamer.bettergui.button.WrappedDummyButton;
+import me.hsgamer.bettergui.manager.MenuCommandManager;
 import me.hsgamer.bettergui.util.ProcessApplierConstants;
+import me.hsgamer.bettergui.util.SchedulerUtil;
 import me.hsgamer.bettergui.util.StringReplacerApplier;
 import me.hsgamer.hscore.bukkit.gui.object.BukkitItem;
-import me.hsgamer.hscore.bukkit.scheduler.Scheduler;
 import me.hsgamer.hscore.collections.map.CaseInsensitiveStringMap;
 import me.hsgamer.hscore.common.CollectionUtils;
 import me.hsgamer.hscore.common.StringReplacer;
-import me.hsgamer.hscore.config.CaseInsensitivePathString;
 import me.hsgamer.hscore.config.Config;
+import me.hsgamer.hscore.minecraft.gui.button.DisplayButton;
 import me.hsgamer.hscore.minecraft.gui.object.Item;
 import me.hsgamer.hscore.task.BatchRunnable;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -29,8 +30,8 @@ import static me.hsgamer.bettergui.BetterGUI.getInstance;
 public class AnvilMenu extends StandardMenu {
     private final Map<UUID, AnvilGUI> anvilGUIList = new ConcurrentHashMap<>();
     private final Map<UUID, String> userInputs = new ConcurrentHashMap<>();
-    private ActionApplier completeAction = new ActionApplier(Collections.emptyList());
-    private ActionApplier closeAction = new ActionApplier(Collections.emptyList());
+    private ActionApplier completeAction = ActionApplier.EMPTY;
+    private ActionApplier closeAction = ActionApplier.EMPTY;
     private String title;
     private String text;
     private WrappedButton button;
@@ -56,25 +57,25 @@ public class AnvilMenu extends StandardMenu {
                         if (s.contains(" ")) {
                             getInstance().getLogger().warning("Illegal characters in command '" + s + "'" + "in the menu '" + getName() + "'. Ignored");
                         } else {
-                            getInstance().getMenuCommandManager().registerMenuCommand(s, this);
+                            getInstance().get(MenuCommandManager.class).registerMenuCommand(s, this);
                         }
                     }
                 });
 
-        for (Map.Entry<CaseInsensitivePathString, Object> entry : configSettings.entrySet()) {
-            CaseInsensitivePathString key = entry.getKey();
+        for (Map.Entry<String, Object> entry : configSettings.entrySet()) {
+            String key = entry.getKey();
             Object value = entry.getValue();
             if (!(value instanceof Map)) {
                 continue;
             }
             //noinspection unchecked
             Map<String, Object> values = new CaseInsensitiveStringMap<>((Map<String, Object>) value);
-            if (key.equals(new CaseInsensitivePathString("left-button"))) {
+            if (key.equalsIgnoreCase("left-button")) {
                 leftButton = ButtonBuilder.INSTANCE.build(new ButtonBuilder.Input(this, "left_button", values)).orElse(null);
                 if (leftButton != null) {
                     leftButton.init();
                 }
-            } else if (key.equals(new CaseInsensitivePathString("right-button"))) {
+            } else if (key.equalsIgnoreCase("right-button")) {
                 rightButton = ButtonBuilder.INSTANCE.build(new ButtonBuilder.Input(this, "right_button", values)).orElse(null);
                 if (rightButton != null) {
                     rightButton.init();
@@ -86,7 +87,11 @@ public class AnvilMenu extends StandardMenu {
         }
     }
 
-    private static Optional<ItemStack> getItem(Item item) {
+    private static Optional<ItemStack> getItem(DisplayButton displayButton) {
+        if (displayButton == null) {
+            return Optional.empty();
+        }
+        Item item = displayButton.getItem();
         if (item instanceof BukkitItem) {
             return Optional.of(((BukkitItem) item).getItemStack());
         }
@@ -101,9 +106,9 @@ public class AnvilMenu extends StandardMenu {
             batchRunnable
                     .getTaskPool(ProcessApplierConstants.ACTION_STAGE)
                     .addLast(process -> closeAction.accept(stateSnapshot.getPlayer().getUniqueId(), process));
-            Scheduler.current().async().runTask(batchRunnable);
+            SchedulerUtil.async().run(batchRunnable);
         });
-        builder.mainThreadExecutor(runnable -> Scheduler.current().sync().runEntityTask(player, runnable));
+        builder.mainThreadExecutor(runnable -> SchedulerUtil.entity(player).run(runnable));
         builder.onClickAsync((slot, stateSnapshot) -> {
             if (slot != AnvilGUI.Slot.OUTPUT) {
                 return CompletableFuture.completedFuture(Collections.emptyList());
@@ -122,7 +127,7 @@ public class AnvilMenu extends StandardMenu {
             }
 
             return CompletableFuture
-                    .runAsync(batchRunnable, runnable -> Scheduler.current().async().runTask(runnable))
+                    .runAsync(batchRunnable, runnable -> SchedulerUtil.async().run(runnable))
                     .thenApply(v -> Arrays.asList(
                             AnvilGUI.ResponseAction.run(() -> remove(stateSnapshot.getPlayer().getUniqueId(), false)),
                             AnvilGUI.ResponseAction.close()
@@ -142,15 +147,15 @@ public class AnvilMenu extends StandardMenu {
         }
 
         if (button != null) {
-            getItem(button.getItem(player.getUniqueId())).ifPresent(builder::itemOutput);
+            getItem(button.display(player.getUniqueId())).ifPresent(builder::itemOutput);
         }
 
         if (leftButton != null) {
-            getItem(leftButton.getItem(player.getUniqueId())).ifPresent(builder::itemLeft);
+            getItem(leftButton.display(player.getUniqueId())).ifPresent(builder::itemLeft);
         }
 
         if (rightButton != null) {
-            getItem(rightButton.getItem(player.getUniqueId())).ifPresent(builder::itemRight);
+            getItem(rightButton.display(player.getUniqueId())).ifPresent(builder::itemRight);
         }
 
         anvilGUIList.put(player.getUniqueId(), builder.open(player));
