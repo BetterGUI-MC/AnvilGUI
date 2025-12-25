@@ -149,6 +149,7 @@ public class LibLoader extends LibraryManager {
                     .artifactId("anvilgui")
                     .version(version)
                     .repository("https://repo.codemc.io/repository/maven-public/")
+                    .repository("https://mvn.wesjd.net/")
                     .build();
 
 
