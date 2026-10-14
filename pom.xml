@@ -11,62 +11,17 @@
   </parent>
 
   <artifactId>AnvilGUI</artifactId>
-  <version>8.4</version>
+  <version>9.0</version>
   <packaging>jar</packaging>
 
   <name>AnvilGUI</name>
   <description>Get inputs in a fancy way</description>
 
   <properties>
+    <!-- compile-time API only: the version loaded at runtime is resolved from maven-metadata -->
     <anvilgui.version>1.10.13-SNAPSHOT</anvilgui.version>
     <project.mainClass>me.hsgamer.bettergui.anvilgui.Main</project.mainClass>
   </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <shadedArtifactAttached>true</shadedArtifactAttached>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <relocations>
-                <!-- HSCore -->
-                <relocation>
-                  <pattern>me.hsgamer.hscore</pattern>
-                  <shadedPattern>me.hsgamer.bettergui.lib.core</shadedPattern>
-                </relocation>
-
-                <!-- MineLib -->
-                <relocation>
-                  <pattern>io.github.projectunified.minelib</pattern>
-                  <shadedPattern>me.hsgamer.bettergui.lib.minelib</shadedPattern>
-                </relocation>
-
-                <!-- bStats -->
-                <relocation>
-                  <pattern>org.bstats</pattern>
-                  <shadedPattern>me.hsgamer.bettergui.lib.bstats</shadedPattern>
-                </relocation>
-
-                <!-- Libby -->
-                <relocation>
-                  <pattern>net.byteflux.libby</pattern>
-                  <shadedPattern>me.hsgamer.bettergui.anvilgui.lib.libby</shadedPattern>
-                </relocation>
-              </relocations>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 
   <repositories>
     <repository>
@@ -89,11 +44,6 @@
       <artifactId>anvilgui</artifactId>
       <version>${anvilgui.version}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>net.byteflux</groupId>
-      <artifactId>libby-core</artifactId> <!-- Replace bukkit if you're using another platform -->
-      <version>1.3.1</version>
     </dependency>
   </dependencies>
 </project>
